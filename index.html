@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscaminas</title>
+    <style>
+        /* Estilos existentes */
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #6e48aa, #9d50bb);
+            color: #fff;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .menu-inicio {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .nivel-btn {
+            width: 220px;
+            padding: 15px;
+            font-size: 18px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+            box-shadow: 0 4px 15px 0 rgba(252, 104, 110, 0.75);
+        }
+        .nivel-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px 0 rgba(252, 104, 110, 0.8);
+        }
+        .nivel-info {
+            font-size: 14px;
+            color: #eee;
+            margin-top: 5px;
+        }
+        .game-container {
+            display: none;
+        }
+        .board {
+            display: inline-grid;
+            gap: 3px;
+            background: linear-gradient(45deg, #a8e063, #56ab2f);
+            border: 3px solid #fff;
+            padding: 5px;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px 0 rgba(86, 171, 47, 0.75);
+        }
+        .cell {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #43cea2, #185a9d);
+            border: 2px solid #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            color: #fff;
+        }
+        .cell:hover {
+            transform: scale(1.1);
+        }
+        .cell.revealed {
+            background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+            color: #333;
+        }
+        .cell.mine {
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+        }
+        .cell.flagged::after {
+            content: "🚩";
+            font-size: 24px;
+        }
+        #message {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        button {
+            margin: 10px 5px;
+            padding: 12px 24px;
+            font-size: 16px;
+            background: linear-gradient(45deg, #00c9ff, #92fe9d);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+            box-shadow: 0 4px 15px 0 rgba(0, 201, 255, 0.75);
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px 0 rgba(0, 201, 255, 0.8);
+        }
+        .win-menu {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #00f260, #0575e6);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            text-align: center;
+            display: none;
+        }
+        .win-menu h2 {
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .color-1 { color: #3498db; }
+        .color-2 { color: #2ecc71; }
+        .color-3 { color: #e74c3c; }
+        .color-4 { color: #9b59b6; }
+        .color-5 { color: #f39c12; }
+        .color-6 { color: #1abc9c; }
+        .color-7 { color: #d35400; }
+        .color-8 { color: #34495e; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="menu-inicio" id="menuInicio">
+            <h1>Buscaminas</h1>
+            <h2>Selecciona un nivel</h2>
+            <button class="nivel-btn" data-nivel="facil">
+                Fácil
+                <div class="nivel-info">Tamaño: 6x6, Minas: 5</div>
+            </button>
+            <button class="nivel-btn" data-nivel="medio">
+                Medio
+                <div class="nivel-info">Tamaño: 10x10, Minas: 15</div>
+            </button>
+            <button class="nivel-btn" data-nivel="dificil">
+                Difícil
+                <div class="nivel-info">Tamaño: 14x14, Minas: 30</div>
+            </button>
+        </div>
+
+        <div class="game-container" id="gameContainer">
+            <h1>Buscaminas Mejorado</h1>
+            <div id="level-info"></div>
+            <div class="board" id="board"></div>
+            <div id="message"></div>
+            <button id="restart">Reiniciar</button>
+            <button id="solve">Resolver con IA</button>
+            <button id="volver">Volver al Menú</button>
+        </div>
+
+        <div class="win-menu" id="winMenu">
+            <h2>¡Felicidades!</h2>
+            <p>Has ganado el juego</p>
+            <button id="playAgain">Jugar de nuevo</button>
+            <button id="volverAlMenu">Volver al Menú</button>
+        </div>
+    </div>
+
+    <script>
+        const menuInicio = document.getElementById('menuInicio');
+        const gameContainer = document.getElementById('gameContainer');
+        const board = document.getElementById('board');
+        const message = document.getElementById('message');
+        const restartButton = document.getElementById('restart');
+        const solveButton = document.getElementById('solve');
+        const levelInfo = document.getElementById('level-info');
+        const winMenu = document.getElementById('winMenu');
+        const playAgainButton = document.getElementById('playAgain');
+        const volverButton = document.getElementById('volver');
+        const volverAlMenuButton = document.getElementById('volverAlMenu');
+        let size, mineCount, cells, gameOver;
+        let nivelActual = null; // Variable para almacenar el nivel actual
+
+        const dificultades = {
+            facil: { size: 6, mines: 5 },
+            medio: { size: 10, mines: 15 },
+            dificil: { size: 14, mines: 30 }
+        };
+
+        function iniciarJuego(nivel) {
+            if (!dificultades[nivel]) {
+                console.error('Nivel no válido:', nivel);
+                return;
+            }
+
+            nivelActual = nivel; // Almacenar el nivel actual
+            menuInicio.style.display = 'none';
+            gameContainer.style.display = 'block';
+            
+            const dificultad = dificultades[nivel];
+            size = dificultad.size;
+            mineCount = dificultad.mines;
+            levelInfo.textContent = `Nivel: ${nivel.charAt(0).toUpperCase() + nivel.slice(1)} - Tamaño: ${size}x${size}, Minas: ${mineCount}`;
+            crearTablero();
+        }
+
+        function crearTablero() {
+            board.innerHTML = '';
+            cells = [];
+            gameOver = false;
+            message.textContent = '';
+            winMenu.style.display = 'none';
+            board.style.gridTemplateColumns = `repeat(${size}, 40px)`;
+
+            for (let i = 0; i < size * size; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = i;
+                cell.addEventListener('click', revelarCelda);
+                cell.addEventListener('contextmenu', marcarBandera);
+                board.appendChild(cell);
+                cells.push({
+                    element: cell,
+                    esMina: false,
+                    revelada: false,
+                    marcada: false,
+                    minasVecinas: 0
+                });
+            }
+
+            // Colocar minas
+            for (let i = 0; i < mineCount; i++) {
+                let randomIndex;
+                do {
+                    randomIndex = Math.floor(Math.random() * cells.length);
+                } while (cells[randomIndex].esMina);
+                cells[randomIndex].esMina = true;
+            }
+
+            // Calcular minas vecinas
+            for (let i = 0; i < cells.length; i++) {
+                if (!cells[i].esMina) {
+                    cells[i].minasVecinas = contarMinasVecinas(i);
+                }
+            }
+        }
+
+        function contarMinasVecinas(index) {
+            let count = 0;
+            const row = Math.floor(index / size);
+            const col = index % size;
+
+            for (let r = Math.max(0, row - 1); r <= Math.min(size - 1, row + 1); r++) {
+                for (let c = Math.max(0, col - 1); c <= Math.min(size - 1, col + 1); c++) {
+                    if (r === row && c === col) continue;
+                    const neighborIndex = r * size + c;
+                    if (cells[neighborIndex].esMina) count++;
+                }
+            }
+
+            return count;
+        }
+
+        function revelarCelda(event) {
+            if (gameOver) return;
+            const index = parseInt(event.target.dataset.index);
+            const cell = cells[index];
+
+            if (cell.marcada || cell.revelada) return;
+
+            cell.revelada = true;
+            cell.element.classList.add('revealed');
+
+            if (cell.esMina) {
+                cell.element.classList.add('mine');
+                cell.element.textContent = '💣';
+                terminarJuego(false);
+            } else {
+                if (cell.minasVecinas > 0) {
+                    cell.element.textContent = cell.minasVecinas;
+                    cell.element.classList.add(`color-${cell.minasVecinas}`);
+                } else {
+                    revelarVecinos(index);
+                }
+                verificarVictoria();
+            }
+        }
+
+        function revelarVecinos(index) {
+            const row = Math.floor(index / size);
+            const col = index % size;
+
+            for (let r = Math.max(0, row - 1); r <= Math.min(size - 1, row + 1); r++) {
+                for (let c = Math.max(0, col - 1); c <= Math.min(size - 1, col + 1); c++) {
+                    if (r === row && c === col) continue;
+                    const neighborIndex = r * size + c;
+                    const neighborCell = cells[neighborIndex];
+                    if (!neighborCell.revelada && !neighborCell.marcada) {
+                        revelarCelda({ target: neighborCell.element });
+                    }
+                }
+            }
+        }
+
+        function marcarBandera(event) {
+            event.preventDefault();
+            if (gameOver) return;
+            const index = parseInt(event.target.dataset.index);
+            const cell = cells[index];
+
+            if (!cell.revelada) {
+                cell.marcada = !cell.marcada;
+                cell.element.classList.toggle('flagged');
+            }
+
+            verificarVictoria();
+        }
+
+        function verificarVictoria() {
+            const todasNoMinasReveladas = cells.every(cell => cell.esMina || cell.revelada);
+            const todasMinasMarcadas = cells.every(cell => !cell.esMina || cell.marcada);
+
+            if (todasNoMinasReveladas && todasMinasMarcadas) {
+                terminarJuego(true);
+            }
+        }
+
+        function terminarJuego(esVictoria) {
+            gameOver = true;
+            message.textContent = esVictoria ? '¡Ganaste!' : 'Juego terminado';
+            cells.forEach(cell => {
+                if (cell.esMina) {
+                    cell.element.classList.add('revealed', 'mine');
+                    cell.element.textContent = '💣';
+                }
+            });
+
+            if (esVictoria) {
+                setTimeout(() => {
+                    winMenu.style.display = 'block';
+                }, 1000);
+            }
+        }
+
+        async function resolverConIA() {
+            if (gameOver) return;
+            
+            const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+            
+            // Estrategia de IA mejorada
+            while (!gameOver) {
+                // Encontrar todas las celdas seguras
+                const celdasSeguras = cells.filter(cell => !cell.revelada && !cell.esMina);
+                
+                if (celdasSeguras.length === 0) break;
+
+                // Elegir una celda segura aleatoria
+                const celdaSeguraAleatoria = celdasSeguras[Math.floor(Math.random() * celdasSeguras.length)];
+                
+                // Revelar la celda
+                revelarCelda({ target: celdaSeguraAleatoria.element });
+                await delay(200);
+
+                // Marcar todas las minas
+                cells.forEach(cell => {
+                    if (cell.esMina && !cell.marcada) {
+                        marcarBandera({ target: cell.element, preventDefault: () => {} });
+                        setTimeout(() => cell.element.classList.add('flagged'), 50);
+                    }
+                });
+
+                await delay(200);
+            }
+        }
+
+        // Event Listeners
+        document.querySelectorAll('.nivel-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => iniciarJuego(e.currentTarget.dataset.nivel));
+        });
+
+        restartButton.addEventListener('click', () => {
+            if (nivelActual) {
+                iniciarJuego(nivelActual);
+            } else {
+                console.error('Nivel actual no definido.');
+            }
+        });
+
+        solveButton.addEventListener('click', resolverConIA);
+
+        playAgainButton.addEventListener('click', () => {
+            if (nivelActual) {
+                iniciarJuego(nivelActual);
+            } else {
+                console.error('Nivel actual no definido.');
+            }
+        });
+
+        volverButton.addEventListener('click', () => {
+            gameContainer.style.display = 'none';
+            menuInicio.style.display = 'flex';
+        });
+
+        volverAlMenuButton.addEventListener('click', () => {
+            winMenu.style.display = 'none';
+            gameContainer.style.display = 'none';
+            menuInicio.style.display = 'flex';
+        });
+    </script>
+</body>
+</html>
